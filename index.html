@@ -317,12 +317,13 @@ function showContacts(L){
 function vcfPick(){let i=$('#vcfin');if(!i){i=document.createElement('input');i.type='file';i.id='vcfin';i.accept='.vcf,text/vcard,text/x-vcard,text/plain';i.multiple=false;i.hidden=true;i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const L=[];String(r.result).split(/BEGIN:VCARD/i).slice(1).forEach(v=>{v=v.replace(/\r?\n[ \t]/g,'');const fn=(v.match(/^FN[^:\n]*:(.*)$/im)||[])[1]||'',t=(v.match(/^TEL[^:\n]*:(.*)$/im)||[])[1]||'';const p=t?np(t):null;if(p)L.push({n:fn.trim()||p,p})});i.value='';showContacts(L)};r.readAsText(f)};document.body.appendChild(i)}i.click()}
 const CICON='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="15" height="16" rx="3"/><circle cx="10.5" cy="10" r="2.5"/><path d="M6 17c.6-2 2.4-3 4.5-3s3.9 1 4.5 3M21 8v3M21 13v3"/></svg>';
 const CAN=()=>window.isSecureContext&&'contacts'in navigator&&!!navigator.contacts.select;
-const CBTN=()=>`<button type="button" class="cbtn" onclick="pickContacts()">${CICON} Contacts se Chunein</button>${CAN()?'':`<div class="dupb" style="margin:0 0 8px">Direct contacts ke liye app ko <b>https link</b> par kholein (jaise GitHub Pages). Phone ki file (content://) se contacts nahi khulte. Tab tak <b>.vcf</b> file chun sakte hain.</div>`}`;
+const cmsg=t=>{const e=$('#cmsg');if(e){e.textContent=t;e.hidden=false}else toast(t)};
+const CBTN=()=>`<button type="button" class="cbtn" onclick="pickContacts()">${CICON} Contacts se Chunein</button><button type="button" class="cbtn" style="border-style:solid;background:#fff;font-size:13px;min-height:40px" onclick="vcfPick()">Contacts file (.vcf) se</button><div id="cmsg" class="dupb" style="margin:0 0 8px" hidden></div>`;
 async function pickContacts(){
- if(!CAN())return vcfPick();
+ if(!CAN()){cmsg('Is browser mein contacts nahi khulte ('+(window.isSecureContext?'browser support nahi':'https nahi')+'). App ko Chrome mein kholein, ya neeche .vcf file chunein.');return}
  try{const r=await navigator.contacts.select(['name','tel'],{multiple:true});if(!r||!r.length)return;
   const L=[];r.forEach(c=>{const n=String((c.name&&c.name[0])||'').trim(),t=c.tel&&c.tel[0];const p=t?np(t):null;if(p)L.push({n:n||p,p})});showContacts(L)
- }catch(e){if(e.name!=='AbortError'){toast('Contacts nahi khul sake. Ab .vcf file chunein.');vcfPick()}}}
+ }catch(e){if(e.name!=='AbortError')cmsg('Contacts nahi khul sake: '+(e.name||'')+' '+(e.message||'')+'. App ko seedha Chrome mein kholein (link ko Chrome mein open karein), ya .vcf file chunein.')}}
 async function saveContacts(){const have=new Set(Object.values(C).map(c=>c.phone)),u={};let n=0;
  (window.CL||[]).forEach((x,i)=>{if(!$('#ck'+i).checked||have.has(x.p))return;have.add(x.p);const k=B.child('customers').push().key;u['customers/'+k]={name:($('#cx'+i).value.trim()||x.n),phone:x.p,openingFils:0,biz:'',addr:'',notes:'',status:'active',createdAt:Date.now()+i};n++});
  if(!n){$('#dlg').close();return toast('Sab contacts pehle se mojood hain.')}
